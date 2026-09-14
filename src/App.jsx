@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   LayoutDashboard, CalendarCheck, MessageSquareText, Star, CreditCard,
   Users, Dumbbell, Image as ImageIcon, Settings as SettingsIcon, LogOut,
-  Search, Trash2, Check, X, Plus, Loader2, TrendingUp
+  Search, Trash2, Check, X, Plus, Loader2, TrendingUp, Eye, EyeOff, Lock, User, ArrowRight
 } from "lucide-react";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid
@@ -11,7 +11,7 @@ import {
 /* ============================================================
    CONFIG — paste your deployed Apps Script Web App URL here
    ============================================================ */
-const API_BASE_URL = "https://script.google.com/macros/s/AKfycbw52bCy9DjDhG6RkGVbVhPEtkVZHd_vuVfPQTTr7U1EhLkx6PYXkFi7Jdc5vrw7nG90/exec";
+const API_BASE_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
 
 async function apiGet(action, params = {}, token) {
   const query = new URLSearchParams({ action, ...(token ? { token } : {}), ...params }).toString();
@@ -46,6 +46,8 @@ const C = {
 const fontImport = `
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
 `;
+
+const heading = { fontFamily: "'Space Grotesk', sans-serif" };
 
 /* ============================================================
    DEMO DATA (shown when API_BASE_URL isn't configured yet)
@@ -168,8 +170,16 @@ function Table({ columns, rows, renderActions }) {
 function LoginScreen({ onLogin }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [focusField, setFocusField] = useState(null);
+
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 30);
+    return () => clearTimeout(t);
+  }, []);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -177,62 +187,159 @@ function LoginScreen({ onLogin }) {
     try {
       if (API_BASE_URL.startsWith("PASTE_")) {
         // demo mode — let anything through
-        onLogin("demo-token");
+        setTimeout(() => onLogin("demo-token"), 500);
         return;
       }
       const res = await apiPost("adminLogin", { username, password });
       if (res.success) onLogin(res.data.token);
-      else setError(res.error || "Login failed");
+      else { setError(res.error || "Login failed"); setLoading(false); }
     } catch (err) {
       setError("Could not reach the server.");
-    } finally {
       setLoading(false);
     }
   };
 
   return (
     <div style={{
-      minHeight: "100vh", background: C.bg, display: "flex",
-      alignItems: "center", justifyContent: "center", fontFamily: "'Inter', sans-serif",
+      minHeight: "100vh", position: "relative", overflow: "hidden",
+      background: `radial-gradient(circle at 20% 20%, #1a2a17 0%, ${C.bg} 55%)`,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontFamily: "'Inter', sans-serif", padding: 20,
     }}>
-      <style>{fontImport}</style>
+      <style>{`
+        ${fontImport}
+        @keyframes floatBlob1 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(40px,-30px) scale(1.15); } }
+        @keyframes floatBlob2 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-30px,40px) scale(1.1); } }
+        @keyframes cardIn { from { opacity: 0; transform: translateY(28px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes logoPop { 0% { transform: scale(0) rotate(-20deg); opacity: 0; } 60% { transform: scale(1.15) rotate(6deg); } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+        @keyframes shimmer { 0% { background-position: -300px 0; } 100% { background-position: 300px 0; } }
+        .glass-input { transition: border-color .25s ease, box-shadow .25s ease, background .25s ease; }
+        .glass-input:focus { box-shadow: 0 0 0 3px rgba(139,236,63,0.15); }
+        .signin-btn { transition: transform .18s ease, box-shadow .18s ease, filter .18s ease; }
+        .signin-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(139,236,63,0.35); filter: brightness(1.05); }
+        .signin-btn:active:not(:disabled) { transform: translateY(0); }
+        .eye-toggle { transition: color .2s ease, transform .15s ease; }
+        .eye-toggle:hover { transform: scale(1.1); }
+      `}</style>
+
+      {/* Ambient glow blobs */}
+      <div style={{
+        position: "absolute", width: 360, height: 360, borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(139,236,63,0.25), transparent 70%)",
+        top: "-8%", left: "-10%", filter: "blur(10px)", animation: "floatBlob1 9s ease-in-out infinite",
+      }} />
+      <div style={{
+        position: "absolute", width: 300, height: 300, borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(139,236,63,0.15), transparent 70%)",
+        bottom: "-10%", right: "-8%", filter: "blur(10px)", animation: "floatBlob2 11s ease-in-out infinite",
+      }} />
+
+      {/* Glass card */}
       <form onSubmit={submit} style={{
-        background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16,
-        padding: "40px 36px", width: 360,
+        position: "relative", zIndex: 1, width: 380, maxWidth: "100%",
+        background: "rgba(21,27,24,0.55)", backdropFilter: "blur(22px)", WebkitBackdropFilter: "blur(22px)",
+        border: "1px solid rgba(255,255,255,0.09)", borderRadius: 22,
+        padding: "42px 34px", boxShadow: "0 24px 70px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06)",
+        opacity: mounted ? 1 : 0,
+        animation: mounted ? "cardIn .6s cubic-bezier(.2,.8,.2,1) forwards" : "none",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+        {/* Logo */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 8 }}>
           <div style={{
-            width: 32, height: 32, borderRadius: 8, background: C.green,
-            display: "flex", alignItems: "center", justifyContent: "center",
+            width: 52, height: 52, borderRadius: 14, background: `linear-gradient(135deg, ${C.green}, ${C.greenDark})`,
+            display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 14,
+            boxShadow: "0 8px 22px rgba(139,236,63,0.35)",
+            animation: mounted ? "logoPop .7s cubic-bezier(.2,.8,.2,1) .1s both" : "none",
           }}>
-            <Dumbbell size={18} color="#0d1210" />
+            <Dumbbell size={26} color="#0d1210" />
           </div>
-          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 18, color: C.text }}>
-            IRONFIT
-          </div>
+          <div style={{ ...heading, fontWeight: 700, fontSize: 20, color: C.text, letterSpacing: 0.5 }}>IRONFIT</div>
+          <div style={{ color: C.muted, fontSize: 13, marginTop: 4 }}>Admin dashboard login</div>
         </div>
-        <div style={{ color: C.muted, fontSize: 13.5, marginBottom: 28 }}>Admin dashboard login</div>
 
-        <label style={{ fontSize: 13, color: C.muted, display: "block", marginBottom: 6 }}>Username</label>
-        <input value={username} onChange={(e) => setUsername(e.target.value)} required
-          style={inputStyle} placeholder="admin" />
-
-        <label style={{ fontSize: 13, color: C.muted, display: "block", margin: "16px 0 6px" }}>Password</label>
-        <input value={password} onChange={(e) => setPassword(e.target.value)} required type="password"
-          style={inputStyle} placeholder="••••••••" />
-
-        {error && <div style={{ color: C.danger, fontSize: 13, marginTop: 14 }}>{error}</div>}
-        {API_BASE_URL.startsWith("PASTE_") && (
-          <div style={{ color: C.warn, fontSize: 12, marginTop: 14, lineHeight: 1.5 }}>
-            Demo mode — API_BASE_URL not set yet. Any login works with sample data.
+        <div style={{ marginTop: 26 }}>
+          <label style={{ fontSize: 12.5, color: C.muted, display: "block", marginBottom: 7, fontWeight: 500 }}>Username</label>
+          <div style={{ position: "relative" }}>
+            <User size={16} color={focusField === "user" ? C.green : C.mutedDark || C.muted} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)" }} />
+            <input
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              onFocus={() => setFocusField("user")}
+              onBlur={() => setFocusField(null)}
+              required
+              className="glass-input"
+              style={{ ...glassInputStyle, paddingLeft: 40 }}
+              placeholder="admin"
+            />
           </div>
-        )}
 
-        <div style={{ marginTop: 24 }}>
-          <Btn small={false} disabled={loading} onClick={submit}>
-            {loading ? <Loader2 size={16} className="spin" /> : null}
-            {loading ? "Signing in…" : "Sign in"}
-          </Btn>
+          <label style={{ fontSize: 12.5, color: C.muted, display: "block", margin: "16px 0 7px", fontWeight: 500 }}>Password</label>
+          <div style={{ position: "relative" }}>
+            <Lock size={16} color={focusField === "pass" ? C.green : C.mutedDark || C.muted} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)" }} />
+            <input
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onFocus={() => setFocusField("pass")}
+              onBlur={() => setFocusField(null)}
+              required
+              type={showPassword ? "text" : "password"}
+              className="glass-input"
+              style={{ ...glassInputStyle, paddingLeft: 40, paddingRight: 42 }}
+              placeholder="••••••••"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((s) => !s)}
+              className="eye-toggle"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              style={{
+                position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+                background: "none", border: "none", cursor: "pointer", color: C.muted,
+                display: "flex", alignItems: "center", padding: 4,
+              }}
+            >
+              {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+            </button>
+          </div>
+
+          {error && (
+            <div style={{
+              color: C.danger, fontSize: 13, marginTop: 14, background: "rgba(239,106,95,0.1)",
+              border: "1px solid rgba(239,106,95,0.25)", borderRadius: 8, padding: "9px 12px",
+            }}>
+              {error}
+            </div>
+          )}
+          {API_BASE_URL.startsWith("PASTE_") && (
+            <div style={{ color: C.warn, fontSize: 12, marginTop: 14, lineHeight: 1.5 }}>
+              Demo mode — API_BASE_URL not set yet. Any login works with sample data.
+            </div>
+          )}
+
+          <div style={{ marginTop: 26, display: "flex", justifyContent: "center" }}>
+            <button
+              type="submit"
+              disabled={loading}
+              className="signin-btn"
+              style={{
+                width: "100%", background: `linear-gradient(135deg, ${C.green}, ${C.greenDark})`,
+                color: "#0d1210", border: "none", borderRadius: 12,
+                padding: "13px 0", fontSize: 15, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                fontFamily: "'Inter', sans-serif", opacity: loading ? 0.75 : 1,
+              }}
+            >
+              {loading ? (
+                <>
+                  <Loader2 size={17} className="spin" /> Signing in…
+                </>
+              ) : (
+                <>
+                  Sign in <ArrowRight size={16} />
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </form>
     </div>
@@ -243,6 +350,12 @@ const inputStyle = {
   width: "100%", boxSizing: "border-box", background: C.bg, border: `1px solid ${C.border}`,
   borderRadius: 8, padding: "10px 12px", color: C.text, fontSize: 14, fontFamily: "'Inter', sans-serif",
   outline: "none",
+};
+
+const glassInputStyle = {
+  width: "100%", boxSizing: "border-box", background: "rgba(13,18,16,0.5)",
+  border: "1px solid rgba(255,255,255,0.1)", borderRadius: 11, padding: "12px 12px",
+  color: C.text, fontSize: 14, fontFamily: "'Inter', sans-serif", outline: "none",
 };
 
 /* ============================================================
@@ -497,7 +610,7 @@ function SettingsTab({ token, demo }) {
 
   useEffect(() => {
     if (demo) {
-      setSettings({ gymName: "IronFit", phone: "", whatsapp: "", address: "", adminEmail: "", instagram: "", snapchat: "", mapsEmbedUrl: "" });
+      setSettings({ gymName: "IronFit", phone: "", whatsapp: "", address: "", adminEmail: "", instagram: "", facebook: "", mapsEmbedUrl: "" });
       return;
     }
     (async () => {
@@ -513,7 +626,7 @@ function SettingsTab({ token, demo }) {
     setTimeout(() => setSaved(false), 2000);
   };
 
-  const fields = ["gymName", "phone", "whatsapp", "address", "adminEmail", "instagram", "snapchat", "mapsEmbedUrl"];
+  const fields = ["gymName", "phone", "whatsapp", "address", "adminEmail", "instagram", "facebook", "mapsEmbedUrl"];
 
   if (loading) return <Centered>Loading settings…</Centered>;
 
