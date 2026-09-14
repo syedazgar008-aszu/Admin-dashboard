@@ -11,7 +11,7 @@ import {
 /* ============================================================
    CONFIG — paste your deployed Apps Script Web App URL here
    ============================================================ */
-const API_BASE_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+const API_BASE_URL = "https://script.google.com/macros/s/AKfycbw52bCy9DjDhG6RkGVbVhPEtkVZHd_vuVfPQTTr7U1EhLkx6PYXkFi7Jdc5vrw7nG90/exec";
 
 async function apiGet(action, params = {}, token) {
   const query = new URLSearchParams({ action, ...(token ? { token } : {}), ...params }).toString();
